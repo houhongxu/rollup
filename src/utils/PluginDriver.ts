@@ -66,6 +66,7 @@ export type ReplaceContext = (context: PluginContext, plugin: Plugin) => PluginC
 
 export type HookAction = [plugin: string, hook: string, args: unknown[]];
 
+//// 插件工具类
 export class PluginDriver {
 	public readonly emitFile: EmitFile;
 	public finaliseAssets: () => void;
@@ -168,6 +169,7 @@ export class PluginDriver {
 		return null;
 	}
 
+	//// 并发执行hook
 	// parallel, ignores returns
 	async hookParallel<H extends AsyncPluginHooks & ParallelPluginHooks>(
 		hookName: H,

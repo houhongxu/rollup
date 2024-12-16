@@ -38,6 +38,7 @@ import type {
 	RollupWatcher
 } from './types';
 
+//// 包装一层参数
 export default function rollup(rawInputOptions: RollupOptions): Promise<RollupBuild> {
 	return rollupInternal(rawInputOptions, null);
 }

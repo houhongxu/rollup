@@ -61,6 +61,7 @@ export default async function runRollup(command: Record<string, any>): Promise<v
 			const { options, warnings } = await getConfigs(command);
 			try {
 				for (const inputOptions of options) {
+					//// 对每一个inputOptions执行build
 					await build(inputOptions, warnings, command.silent);
 				}
 				if (command.failAfterWarnings && warnings.warningOccurred) {

@@ -24,6 +24,7 @@ import {
 	warnUnknownOptions
 } from './options';
 
+//// 命令行参数缩写
 export const commandAliases: { [key: string]: string } = {
 	c: 'config',
 	d: 'dir',

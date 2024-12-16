@@ -16,6 +16,7 @@ if (command.help || (process.argv.length <= 2 && process.stdin.isTTY)) {
 } else if (command.version) {
 	console.log(`rollup v${version}`);
 } else {
+	//// 增强错误信息
 	try {
 		// eslint-disable-next-line unicorn/prefer-module
 		require('source-map-support').install();
@@ -23,5 +24,6 @@ if (command.help || (process.argv.length <= 2 && process.stdin.isTTY)) {
 		// do nothing
 	}
 
+	//// 执行命令
 	run(command);
 }

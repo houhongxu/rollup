@@ -30,6 +30,7 @@ export default async function build(
 		stderr(cyan(`\n${bold(inputFiles!)} → ${bold(files.join(', '))}...`));
 	}
 
+	//// 使用rollup进行bundle
 	const bundle = await rollup(inputOptions as any);
 	if (useStdout) {
 		const output = outputOptions[0];
