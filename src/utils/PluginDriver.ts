@@ -422,7 +422,7 @@ export function getSortedValidatedPlugins(
 				//// 确保handler是函数
 				validateHandler(hook.handler, hookName, plugin);
 
-				//// 排序hook
+				//// 根据order属性排序hook
 				if (hook.order === 'pre') {
 					pre.push(plugin);
 					continue;
