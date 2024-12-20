@@ -42,6 +42,7 @@ type EnsurePromise<T> = Promise<Awaited<T>>;
  */
 type Argument0<H extends keyof FunctionPluginHooks> = Parameters<FunctionPluginHooks[H]>[0];
 
+//// input（也叫build）阶段的hook，closeBundle特殊
 // This will make sure no input hook is omitted
 const inputHookNames: {
 	[P in InputPluginHooks]: 1;
@@ -60,6 +61,8 @@ const inputHookNames: {
 	transform: 1,
 	watchChange: 1
 };
+
+//// input阶段hook key的数组
 const inputHooks = Object.keys(inputHookNames);
 
 export type ReplaceContext = (context: PluginContext, plugin: Plugin) => PluginContext;
@@ -398,6 +401,7 @@ export class PluginDriver {
 	}
 }
 
+//// 获取排序与验证后的插件
 export function getSortedValidatedPlugins(
 	hookName: keyof FunctionPluginHooks | AddonHooks,
 	plugins: readonly Plugin[],
@@ -406,25 +410,38 @@ export function getSortedValidatedPlugins(
 	const pre: Plugin[] = [];
 	const normal: Plugin[] = [];
 	const post: Plugin[] = [];
+
 	for (const plugin of plugins) {
+		//// 获取指定hook
 		const hook = plugin[hookName];
+
 		if (hook) {
 			if (typeof hook === 'object') {
+				//// 是对象hook时
+
+				//// 确保handler是函数
 				validateHandler(hook.handler, hookName, plugin);
+
+				//// 排序hook
 				if (hook.order === 'pre') {
 					pre.push(plugin);
 					continue;
 				}
+
 				if (hook.order === 'post') {
 					post.push(plugin);
 					continue;
 				}
 			} else {
+				//// 是函数hook时
 				validateHandler(hook, hookName, plugin);
 			}
+
+			//// 其他hook
 			normal.push(plugin);
 		}
 	}
+
 	return [...pre, ...normal, ...post];
 }
 
