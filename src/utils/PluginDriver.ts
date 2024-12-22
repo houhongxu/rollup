@@ -144,6 +144,7 @@ export class PluginDriver {
 		);
 	}
 
+	//// 异步执行指定的first hook，返回第一个有结果的
 	// chains, first non-null result stops and returns result and last plugin
 	async hookFirstAndGetPlugin<H extends AsyncPluginHooks & FirstPluginHooks>(
 		hookName: H,
@@ -151,14 +152,21 @@ export class PluginDriver {
 		replaceContext?: ReplaceContext | null,
 		skipped?: ReadonlySet<Plugin> | null
 	): Promise<[NonNullable<ReturnType<FunctionPluginHooks[H]>>, Plugin] | null> {
+		//// 遍历插件
 		for (const plugin of this.getSortedPlugins(hookName)) {
+			//// 跳过指定的插件
 			if (skipped?.has(plugin)) continue;
+
+			//// 执行hook
 			const result = await this.runHook(hookName, parameters, plugin, replaceContext);
+
+			//// 有结果就返回执行结果和此插件
 			if (result != null) return [result, plugin];
 		}
 		return null;
 	}
 
+	//// 同步执行指定的first hook，返回第一个有结果的
 	// chains synchronously, first non-null result stops and returns
 	hookFirstSync<H extends SyncPluginHooks & FirstPluginHooks>(
 		hookName: H,
@@ -167,28 +175,40 @@ export class PluginDriver {
 	): ReturnType<FunctionPluginHooks[H]> | null {
 		for (const plugin of this.getSortedPlugins(hookName)) {
 			const result = this.runHookSync(hookName, parameters, plugin, replaceContext);
+
 			if (result != null) return result;
 		}
 		return null;
 	}
 
-	//// 并发执行hook
+	//// 并行执行hook
 	// parallel, ignores returns
 	async hookParallel<H extends AsyncPluginHooks & ParallelPluginHooks>(
 		hookName: H,
 		parameters: Parameters<FunctionPluginHooks[H]>,
 		replaceContext?: ReplaceContext
 	): Promise<void> {
+		//// 收集的promise
 		const parallelPromises: Promise<unknown>[] = [];
+
+		//// 遍历plugin
 		for (const plugin of this.getSortedPlugins(hookName)) {
 			if ((plugin[hookName] as { sequential?: boolean }).sequential) {
+				//// 如果中间有一个是串行的，先并发执行之前收集的hook
 				await Promise.all(parallelPromises);
+
+				//// 清除收集的hook
 				parallelPromises.length = 0;
+
+				//// 执行这个串行的hook
 				await this.runHook(hookName, parameters, plugin, replaceContext);
 			} else {
+				//// 如果不是串行的，收集这个hook
 				parallelPromises.push(this.runHook(hookName, parameters, plugin, replaceContext));
 			}
 		}
+
+		//// 执行所有并行的hook
 		await Promise.all(parallelPromises);
 	}
 
@@ -287,15 +307,18 @@ export class PluginDriver {
 		return promise.then(noReturn);
 	}
 
+	//// 获取sortedPlugins
 	private getSortedPlugins(
 		hookName: keyof FunctionPluginHooks | AddonHooks,
 		validateHandler?: (handler: unknown, hookName: string, plugin: Plugin) => void
 	): Plugin[] {
+		//// 获取或者赋值默认值给this.sortedPlugins
 		return getOrCreate(this.sortedPlugins, hookName, () =>
 			getSortedValidatedPlugins(hookName, this.plugins, validateHandler)
 		);
 	}
 
+	//// 执行插件并返回结果
 	/**
 	 * Run an async plugin hook and return the result.
 	 * @param hookName Name of the plugin hook. Must be either in `PluginHooks`
@@ -322,16 +345,21 @@ export class PluginDriver {
 		plugin: Plugin,
 		replaceContext?: ReplaceContext | null
 	): Promise<unknown> {
+		//// 获取hook和其执行函数
 		// We always filter for plugins that support the hook before running it
 		const hook = plugin[hookName];
 		const handler = typeof hook === 'object' ? hook.handler : hook;
 
+		//// 获取插件上下文
 		let context = this.pluginContexts.get(plugin)!;
+
+		//// 如果有要替换的上下文则替换
 		if (replaceContext) {
 			context = replaceContext(context, plugin);
 		}
 
 		let action: [string, string, Parameters<any>] | null = null;
+
 		return Promise.resolve()
 			.then(() => {
 				if (typeof handler !== 'function') {
@@ -401,7 +429,7 @@ export class PluginDriver {
 	}
 }
 
-//// 获取排序与验证后的插件
+//// 获取根据指定hook排序与验证后的插件
 export function getSortedValidatedPlugins(
 	hookName: keyof FunctionPluginHooks | AddonHooks,
 	plugins: readonly Plugin[],
@@ -422,7 +450,7 @@ export function getSortedValidatedPlugins(
 				//// 确保handler是函数
 				validateHandler(hook.handler, hookName, plugin);
 
-				//// 根据order属性排序hook
+				//// 根据hook order属性排序插件
 				if (hook.order === 'pre') {
 					pre.push(plugin);
 					continue;
